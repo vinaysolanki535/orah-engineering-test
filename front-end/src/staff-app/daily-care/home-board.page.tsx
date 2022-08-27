@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { setStudentListReducer } from "reducers/studentList.reducer"
 import { SearchStudentInput } from "staff-app/components/search-student-overlay/search-student.component"
 import LoadingSpinner from "shared/components/loading-spinner"
+import FilteredStudent from "staff-app/components/filtered-student-rollType/FilteredStudent"
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
@@ -20,6 +21,10 @@ export const HomeBoardPage: React.FC = () => {
 
   const dispatch = useDispatch()
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
+
+  const [showFilteredStudentbyRollType, setshowFilteredStudentbyRollType] = useState(false)
+
+  const [rollTypeSelected, setRollTypeSelected] = useState("")
 
   useEffect(() => {
     void getStudents()
@@ -41,9 +46,15 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
-  const onActiveRollAction = (action: ActiveRollAction) => {
+  const onActiveRollAction = (action: ActiveRollAction, type: any) => {
     if (action === "exit") {
       setIsRollMode(false)
+      setshowFilteredStudentbyRollType(false)
+      setRollTypeSelected("")
+    }
+    if (action === "filter") {
+      setshowFilteredStudentbyRollType(true)
+      setRollTypeSelected(type)
     }
   }
 
@@ -58,26 +69,31 @@ export const HomeBoardPage: React.FC = () => {
   return (
     <>
       <S.PageContainer>
-        <Toolbar onItemClick={onToolbarAction} />
+      <Toolbar onItemClick={onToolbarAction} activeRollOverlayExit={() => onActiveRollAction("exit", "")} />
 
         {loadState === "loading" && <LoadingSpinner />}
 
         {searchLoading && <LoadingSpinner />}
 
-        {canShowSearchResults() && (
-          <>
-            {studentMatchesList?.map((s: any) => (
-              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
-            ))}
-          </>
-        )}
+        {showFilteredStudentbyRollType && rollTypeSelected ? (
+          <FilteredStudent type={rollTypeSelected} />
+        ) : (
+         <>
+              {canShowSearchResults() && (
+                <>
+                  {studentMatchesList?.map((s: any) => (
+                    <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+                  ))}
+                </>
+              )}
 
-        
-        {canShowAllStudentsLists() && (
-          <>
-            {data?.students.map((s) => (
-              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
-            ))}
+              {canShowAllStudentsLists() && (
+                <>
+                  {data?.students.map((s) => (
+                    <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+                  ))}
+                </>
+              )}
           </>
         )}
 
@@ -92,9 +108,10 @@ export const HomeBoardPage: React.FC = () => {
   )
 }
 
-type ToolbarAction = "roll" | "sort" | "search"
+type ToolbarAction = "roll" | "sort" 
 interface ToolbarProps {
   onItemClick: (action: ToolbarAction, value?: string) => void
+  activeRollOverlayExit: () => void
 }
 const Toolbar: React.FC<ToolbarProps> = (props) => {
   const [showSearchInput, setshowSearchInput] = useState<boolean>(false)
@@ -102,6 +119,7 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
 
   const toogleSearchInput = (state: boolean) => {
     setshowSearchInput((showSearchInput) => state)
+    props.activeRollOverlayExit()
   }
 
   return (
