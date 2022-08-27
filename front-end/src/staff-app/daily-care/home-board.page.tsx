@@ -9,14 +9,27 @@ import { Person } from "shared/models/person"
 import { useApi } from "shared/hooks/use-api"
 import { StudentListTile } from "staff-app/components/student-list-tile/student-list-tile.component"
 import { ActiveRollOverlay, ActiveRollAction } from "staff-app/components/active-roll-overlay/active-roll-overlay.component"
+import { useDispatch, useSelector } from "react-redux"
+import { setStudentListReducer } from "reducers/studentList.reducer"
+import { SearchStudentInput } from "staff-app/components/search-student-overlay/search-student.component"
+import LoadingSpinner from "shared/components/loading-spinner"
 
 export const HomeBoardPage: React.FC = () => {
   const [isRollMode, setIsRollMode] = useState(false)
+  const { loading: searchLoading, results: studentMatchesList } = useSelector((state: any) => state?.studentSearch)
+
+  const dispatch = useDispatch()
   const [getStudents, data, loadState] = useApi<{ students: Person[] }>({ url: "get-homeboard-students" })
 
   useEffect(() => {
     void getStudents()
   }, [getStudents])
+
+  useEffect(() => {
+    if (data) {
+      dispatch(setStudentListReducer(data.students))
+    }
+  }, [data])
 
   const onToolbarAction = (action: ToolbarAction) => {
     if (action === "roll") {
@@ -30,20 +43,35 @@ export const HomeBoardPage: React.FC = () => {
     }
   }
 
+  const canShowSearchResults = () => {
+    return !searchLoading && studentMatchesList
+  }
+
+  const canShowAllStudentsLists = () => {
+    return !studentMatchesList && loadState === "loaded" && data?.students
+  }
+
   return (
     <>
       <S.PageContainer>
         <Toolbar onItemClick={onToolbarAction} />
 
-        {loadState === "loading" && (
-          <CenteredContainer>
-            <FontAwesomeIcon icon="spinner" size="2x" spin />
-          </CenteredContainer>
+        {loadState === "loading" && <LoadingSpinner />}
+
+        {searchLoading && <LoadingSpinner />}
+
+        {canShowSearchResults() && (
+          <>
+            {studentMatchesList?.map((s: any) => (
+              <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
+            ))}
+          </>
         )}
 
-        {loadState === "loaded" && data?.students && (
+        
+        {canShowAllStudentsLists() && (
           <>
-            {data.students.map((s) => (
+            {data?.students.map((s) => (
               <StudentListTile key={s.id} isRollMode={isRollMode} student={s} />
             ))}
           </>
@@ -60,16 +88,22 @@ export const HomeBoardPage: React.FC = () => {
   )
 }
 
-type ToolbarAction = "roll" | "sort"
+type ToolbarAction = "roll" | "sort" | "search"
 interface ToolbarProps {
   onItemClick: (action: ToolbarAction, value?: string) => void
 }
 const Toolbar: React.FC<ToolbarProps> = (props) => {
+  const [showSearchInput, setshowSearchInput] = useState<boolean>(false)
   const { onItemClick } = props
+
+  const toogleSearchInput = (state: boolean) => {
+    setshowSearchInput((showSearchInput) => state)
+  }
+
   return (
     <S.ToolbarContainer>
       <div onClick={() => onItemClick("sort")}>First Name</div>
-      <div>Search</div>
+      {!showSearchInput ? <div onClick={() => toogleSearchInput(true)}>Search</div> : <SearchStudentInput toogleInput={toogleSearchInput} />}
       <S.Button onClick={() => onItemClick("roll")}>Start Roll</S.Button>
     </S.ToolbarContainer>
   )
