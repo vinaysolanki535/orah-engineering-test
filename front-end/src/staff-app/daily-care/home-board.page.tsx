@@ -27,7 +27,11 @@ export const HomeBoardPage: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      dispatch(setStudentListReducer(data.students))
+      const modifiedList = data?.students?.map((s) => {
+        const defaultList = { ...s, rollMark: "unmark" }
+        return defaultList
+      })
+      dispatch(setStudentListReducer(modifiedList))
     }
   }, [data])
 

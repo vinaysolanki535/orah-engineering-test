@@ -1,8 +1,10 @@
 import React from "react"
+import { useEffect, useState } from "react"
 import styled from "styled-components"
 import Button from "@material-ui/core/Button"
 import { BorderRadius, Spacing } from "shared/styles/styles"
 import { RollStateList } from "staff-app/components/roll-state/roll-state-list.component"
+import { useSelector } from "react-redux"
 
 export type ActiveRollAction = "filter" | "exit"
 interface Props {
@@ -12,6 +14,29 @@ interface Props {
 
 export const ActiveRollOverlay: React.FC<Props> = (props) => {
   const { isActive, onItemClick } = props
+  const students = useSelector((state: any) => state?.students)
+  const [classSummary, setClassSummary] = useState<any>({ totalStudent: 0, present: 0, late: 0, absent: 0 })
+
+  const giveCount = (type: string) => {
+    let count = 0
+    students?.forEach((s: any) => {
+      if (s?.rollMark === type) {
+        count += 1
+      }
+    })
+    return count
+  }
+
+  useEffect(() => {
+    if (students) {
+      setClassSummary({
+        totalStudent: students?.length,
+        present: giveCount("present"),
+        late: giveCount("late"),
+        absent: giveCount("absent"),
+      })
+    }
+  }, [students])
 
   return (
     <S.Overlay isActive={isActive}>
@@ -20,10 +45,10 @@ export const ActiveRollOverlay: React.FC<Props> = (props) => {
         <div>
           <RollStateList
             stateList={[
-              { type: "all", count: 0 },
-              { type: "present", count: 0 },
-              { type: "late", count: 0 },
-              { type: "absent", count: 0 },
+              { type: "all", count: classSummary.totalStudent || 0 },
+              { type: "present", count: classSummary.present || 0 },
+              { type: "late", count: classSummary?.late || 0 },
+              { type: "absent", count: classSummary?.absent || 0 },
             ]}
           />
           <div style={{ marginTop: Spacing.u6 }}>

@@ -5,12 +5,33 @@ import { Images } from "assets/images"
 import { Colors } from "shared/styles/colors"
 import { Person, PersonHelper } from "shared/models/person"
 import { RollStateSwitcher } from "staff-app/components/roll-state/roll-state-switcher.component"
+import { useDispatch, useSelector } from "react-redux"
+import { setStudentListReducer } from "reducers/studentList.reducer"
 
 interface Props {
   isRollMode?: boolean
   student: Person
 }
 export const StudentListTile: React.FC<Props> = ({ isRollMode, student }) => {
+  const students = useSelector((state: any) => state?.students)
+  const dispatch = useDispatch()
+
+  const rollStateChangeHandler = (rollState: string) => {
+    let tempArray = [...students]
+    const stuIndex = students?.findIndex((item: any) => item?.id === student?.id)
+    if (stuIndex !== -1) {
+      let tempStudentObj = { ...tempArray[stuIndex] }
+      tempStudentObj.rollMark = rollState
+      tempArray[stuIndex] = tempStudentObj
+      dispatch(setStudentListReducer(tempArray))
+    }
+  }
+
+  const getInitialMarkedState = () => {
+    const stuIndex = students?.findIndex((item: any) => item?.id === student?.id)
+    return students[stuIndex].rollMark
+  }
+
   return (
     <S.Container>
       <S.Avatar url={Images.avatar}></S.Avatar>
@@ -19,7 +40,7 @@ export const StudentListTile: React.FC<Props> = ({ isRollMode, student }) => {
       </S.Content>
       {isRollMode && (
         <S.Roll>
-          <RollStateSwitcher />
+          <RollStateSwitcher onStateChange={rollStateChangeHandler} initialState={getInitialMarkedState()} />
         </S.Roll>
       )}
     </S.Container>
