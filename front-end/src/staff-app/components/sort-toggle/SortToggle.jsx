@@ -13,14 +13,14 @@ export default function SortToggle({ sortFor }) {
     console.log(sortFor, type)
     const temp = [...students]
 
-    temp.sort((a, b) => {
-      let fa = a?.[sortFor].toLowerCase()
-      let fb = b?.[sortFor].toLowerCase()
+    temp.sort((nameA, nameB) => {
+      let itemOne = nameA?.[sortFor].toLowerCase()
+      let itemTwo = nameB?.[sortFor].toLowerCase()
 
-      if (fa > fb) {
+      if (itemOne > itemTwo) {
         return 1
       }
-      if (fa < fb) {
+      if (itemOne < itemTwo) {
         return -1
       }
 
